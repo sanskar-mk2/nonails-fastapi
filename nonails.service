@@ -1,0 +1,16 @@
+[Unit]
+Description=Nonails FastAPI Service To Calculate Mean
+After=network.target
+
+[Service]
+Type=simple
+User=sanskar
+WorkingDirectory=/home/sanskar/nonails-fastapi
+LimitNOFILE=4096
+ExecStart=/home/sanskar/nonails-fastapi/env/bin/uvicorn main:app \
+        --port=8000
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
