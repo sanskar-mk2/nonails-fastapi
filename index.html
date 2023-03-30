@@ -1,123 +1,50 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Camera App" />
-        <title>Camera App</title>
-        <style>
-            #result {
-                margin-top: 20px;
-                padding: 20px;
-                background-color: #f0f0f0;
-                border-radius: 5px;
-                text-align: center;
-                font-size: 24px;
-            }
+<head>
+    <title>Image Mean Calculator</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h1>Image Mean Calculator</h1>
+    <form id="upload-form">
+        <label for="image-input">Select an image:</label>
+        <input type="file" id="image-input" accept="image/*">
+        <button type="submit">Calculate Mean</button>
+    </form>
+    <p id="result"></p>
 
-            #result span {
-                font-weight: bold;
-                color: #333;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Camera App</h1>
-        <div>
-            <video id="video" width="640" height="480"></video>
-        </div>
-        <div>
-            <button id="startButton">Start Camera</button>
-            <button id="stopButton">Stop Camera</button>
-            <button id="captureButton">Capture Image</button>
-        </div>
-        <div>
-            <canvas id="canvas" width="640" height="480"></canvas>
-        </div>
-        <div>
-            <img id="photo" src="" />
-        </div>
-        <div>
-            <button id="sendButton">Send to API</button>
-            <div id="result"></div>
-        </div>
-        <script>
-            // Set up the video element and start the camera
-            const video = document.getElementById("video");
-            const startButton = document.getElementById("startButton");
-            const stopButton = document.getElementById("stopButton");
-            const captureButton = document.getElementById("captureButton");
-            const canvas = document.getElementById("canvas");
-            const photo = document.getElementById("photo");
-            const sendButton = document.getElementById("sendButton");
-            const result = document.getElementById("result");
+    <script>
+        const form = document.querySelector('#upload-form');
+        const resultText = document.querySelector('#result');
 
-            navigator.mediaDevices
-                .getUserMedia({ video: true })
-                .then(function (stream) {
-                    video.srcObject = stream;
-                    video.play();
-                })
-                .catch(function (err) {
-                    console.log("An error occurred: " + err);
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Get the selected image
+            const image = document.querySelector('#image-input').files[0];
+
+            // Create a FormData object to send the image
+            const formData = new FormData();
+            formData.append('image', image);
+
+            try {
+                // Send a POST request to the API
+                const response = await fetch('http://127.0.0.1:8000/', {
+                    method: 'POST',
+                    body: formData
                 });
 
-            // Take a photo and display it in the canvas and image elements
-            captureButton.addEventListener("click", function () {
-                const context = canvas.getContext("2d");
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                photo.src = canvas.toDataURL("image/png");
-                canvas.style.display = "none";
-            });
+                // Parse the response as JSON
+                const data = await response.json();
 
-            // Stop the camera
-            stopButton.addEventListener("click", function () {
-                video.srcObject.getTracks().forEach((track) => track.stop());
-            });
-
-            // Send the image to the API and display the result
-            sendButton.addEventListener("click", function () {
-                const data = new FormData();
-                const file = dataURLtoFile(photo.src, "image.png");
-                data.append("image", file);
-
-                fetch("http://127.0.0.1:8000/", {
-                    method: "POST",
-                    body: data,
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        result.innerHTML = `<span>Mean: ${data.mean}</span>`;
-                    })
-                    .catch((error) => {
-                        console.error("Error:", error);
-                    });
-            });
-
-            startButton.addEventListener("click", function () {
-                navigator.mediaDevices
-                    .getUserMedia({ video: true })
-                    .then(function (stream) {
-                        video.srcObject = stream;
-                        video.play();
-                    })
-                    .catch(function (err) {
-                        console.log("An error occurred: " + err);
-                    });
-            });
-
-            // Helper function to convert a data URL to a File object
-            function dataURLtoFile(dataurl, filename) {
-                const arr = dataurl.split(",");
-                const mime = arr[0].match(/:(.*?);/)[1];
-                const bstr = atob(arr[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                while (n--) {
-                    u8arr[n] = bstr.charCodeAt(n);
-                }
-                return new File([u8arr], filename, { type: mime });
+                // Display the result
+                resultText.textContent = `The mean is ${data.mean}`;
+            } catch (error) {
+                // Display an error message
+                resultText.textContent = `Error: ${error.message}`;
             }
-        </script>
-    </body>
+        });
+    </script>
+</body>
 </html>
